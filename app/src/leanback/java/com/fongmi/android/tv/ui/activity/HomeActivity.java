@@ -158,7 +158,8 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
         if (isLoading()) return;
         WallConfig.get().init();
         LiveConfig.get().init();
-        ApiConfig.get().init().load(getCallback());
+        // 首次加载配置延迟 5 秒，解决 N1 冷启后短暂无法获取网络的问题
+        App.post(() -> ApiConfig.get().init().load(getCallback()), 5000);// ApiConfig.get().init().load(getCallback());
         setLoading(true);
     }
 
