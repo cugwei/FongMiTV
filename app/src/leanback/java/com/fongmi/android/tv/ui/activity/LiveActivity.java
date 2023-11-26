@@ -695,12 +695,16 @@ public class LiveActivity extends BaseActivity implements GroupPresenter.OnClick
 
     private void startFlow() {
         if (!Setting.isChange()) return;
-        if (!mChannel.isLast()) {
-            nextLine(true);
-        } else if (isGone(mBinding.recycler)) {
-            mChannel.setLine(0);
-            nextChannel();
-        }
+
+        // 直播不自动切换频道，无限循环切换源
+        nextLine(true);
+        
+        // if (!mChannel.isLast()) {
+        //     nextLine(true);
+        // } else if (isGone(mBinding.recycler)) {
+        //     mChannel.setLine(0);
+        //     nextChannel();
+        // }
     }
 
     private void prevChannel() {
