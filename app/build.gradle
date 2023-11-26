@@ -23,15 +23,15 @@ android {
         leanback {
             dimension "mode"
         }
-        // mobile {
-        //     dimension "mode"
-        // }
+        mobile {
+            dimension "mode"
+        }
         java {
             dimension "api"
         }
-        // python {
-        //     dimension "api"
-        // }
+        python {
+            dimension "api"
+        }
         armeabi_v7a {
             dimension "abi"
             ndk { abiFilters "armeabi-v7a" }
