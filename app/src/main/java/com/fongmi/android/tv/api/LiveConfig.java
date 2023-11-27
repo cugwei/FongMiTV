@@ -146,20 +146,9 @@ public class LiveConfig {
         Config.delete(config.getUrl());
         config = configs.get(0);
 
-        // 使用下发的url替换当前url
-        // 注意用原url中'/'之后的部分替换下发的url中的'{placeholder}'
-        if (config.getUrl().endsWith("{placeholder}")) {
-            Config stored_config = Config.live();
-            if (!TextUtils.isEmpty(stored_config.getUrl())) {
-                String[] url_components = TextUtils.split(stored_config.getUrl(), "/");
-                if (url_components.length > 1) {
-                    String url = config.getUrl().replace("{placeholder}", url_components[url_components.length-1]);
-                    config.setUrl(url);
-                }
-            }
-        }
-        // 将下发的持久存储下来
-        config.update();
+//        // 将下发的持久存储下来
+//        Config.delete(config.getUrl());
+//        config.insert();
 
         loadConfig(callback);
     }
