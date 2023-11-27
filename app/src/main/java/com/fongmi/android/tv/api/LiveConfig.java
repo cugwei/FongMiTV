@@ -119,7 +119,9 @@ public class LiveConfig {
     }
 
     private void parseConfig(String text, Callback callback) {
+        System.err.println("6666" + config.getUrl());
         if (Json.invalid(text)) {
+            System.err.println("7777" + config.getUrl());
             parseText(text, callback);
         } else {
             checkJson(JsonParser.parseString(text).getAsJsonObject(), callback);
@@ -127,6 +129,7 @@ public class LiveConfig {
     }
 
     private void parseText(String text, Callback callback) {
+        System.err.println("8888" + text);
         Live live = new Live(config.getUrl());
         LiveParser.text(live, text);
         App.post(callback::success);
