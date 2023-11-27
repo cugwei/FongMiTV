@@ -30,6 +30,7 @@ public class LiveConfig {
     private boolean same;
     private Live home;
     private boolean retry_load;
+    private String config_url_before_retry;
 
     private static class Loader {
         static volatile LiveConfig INSTANCE = new LiveConfig();
@@ -92,6 +93,7 @@ public class LiveConfig {
 
     public void load() {
         this.retry_load = true;
+        this.config_url_before_retry = "";
         if (isEmpty()) load(new Callback());
     }
 
@@ -102,6 +104,9 @@ public class LiveConfig {
     private void loadConfig(Callback callback) {
         try {
             System.err.println(config.getUrl());
+            if (this.retry_load) {
+                this.config_url_before_retry = config.getUrl();
+            }
             checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback);
         } catch (Throwable e) {
 
@@ -158,6 +163,16 @@ public class LiveConfig {
         for (Depot item : items) configs.add(Config.find(item, 1));
         Config.delete(config.getUrl());
         config = configs.get(0);
+
+        // 使用下发的url替换当前url
+        // 注意用原url中'/'之后的部分替换下发的url中的'{placeholder}'
+        if (config.getUrl().endsWith("placeholder") && !TextUtils.isEmpty(this.config_url_before_retry)) {
+            String[] url_components = TextUtils.split(this.config_url_before_retry, "/");
+            if (url_components.length > 1) {
+                String url = config.getUrl().replace("placeholder", url_components[url_components.length-1]);
+                config.setUrl(url);
+            }
+        }
 
         // 将下发的持久存储下来
         Config.delete(config.getUrl());
