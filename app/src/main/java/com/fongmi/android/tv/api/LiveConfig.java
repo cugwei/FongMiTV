@@ -100,6 +100,8 @@ public class LiveConfig {
     private void loadConfig(Callback callback) {
         try {
             Notify.show(config.getUrl());
+            System.err.println(config.getUrl());
+            System.out.
             parseConfig(Decoder.getJson(config.getUrl()), callback);
         } catch (Throwable e) {
 
@@ -109,6 +111,7 @@ public class LiveConfig {
             String backup_url = "https://coolapps.sinaapp.com/backup_config";
             if (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url)) {
                 Notify.show("222" + config.getUrl());
+                System.err.println("222" + config.getUrl());
                 config.setUrl(backup_url);
                 loadConfig(callback);
             }
@@ -137,6 +140,7 @@ public class LiveConfig {
 
     private void checkJson(JsonObject object, Callback callback) {
         Notify.show("333" + config.getUrl());
+        System.err.println("333" + config.getUrl());
         if (object.has("urls")) {
             parseDepot(object, callback);
         } else {
@@ -146,6 +150,7 @@ public class LiveConfig {
 
     public void parseDepot(JsonObject object, Callback callback) {
         Notify.show("444" + config.getUrl());
+        System.err.println("444" + config.getUrl());
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
         List<Config> configs = new ArrayList<>();
         for (Depot item : items) configs.add(Config.find(item, 1));
@@ -161,6 +166,7 @@ public class LiveConfig {
 
     public void parseConfig(JsonObject object, Callback callback) {
         Notify.show("555" + config.getUrl());
+        System.err.println("555" + config.getUrl());
         if (!object.has("lives")) return;
         for (JsonElement element : Json.safeListElement(object, "lives")) add(Live.objectFrom(element).check());
         for (Live live : lives) if (live.getName().equals(config.getHome())) setHome(live);
