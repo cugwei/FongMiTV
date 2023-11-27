@@ -29,6 +29,7 @@ public class LiveConfig {
     private Config config;
     private boolean same;
     private Live home;
+    private boolean retry_load;
 
     private static class Loader {
         static volatile LiveConfig INSTANCE = new LiveConfig();
@@ -90,6 +91,7 @@ public class LiveConfig {
     }
 
     public void load() {
+        this.retry_load = true;
         if (isEmpty()) load(new Callback());
     }
 
@@ -100,19 +102,21 @@ public class LiveConfig {
     private void loadConfig(Callback callback) {
         try {
             System.err.println(config.getUrl());
-            parseConfig(Decoder.getJson(config.getUrl()), callback);
+            checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback);
         } catch (Throwable e) {
 
             System.err.println("111" + config.getUrl());
 
-            // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
             String backup_url = "https://coolapps.sinaapp.com/backup_config";
-            if (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url)) {
+            if (this.retry_load &&
+                    (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url))) {
+                // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
+                this.retry_load = false;
+
                 config.setUrl(backup_url);
                 System.err.println("222" + config.getUrl());
                 loadConfig(callback);
             }
-            // if (TextUtils.isEmpty(config.getUrl())) App.post(() -> callback.error(""));
             else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             e.printStackTrace();
         }
@@ -155,9 +159,9 @@ public class LiveConfig {
         Config.delete(config.getUrl());
         config = configs.get(0);
 
-//        // 将下发的持久存储下来
-//        Config.delete(config.getUrl());
-//        config.insert();
+        // 将下发的持久存储下来
+        Config.delete(config.getUrl());
+        config.insert();
 
         loadConfig(callback);
     }
