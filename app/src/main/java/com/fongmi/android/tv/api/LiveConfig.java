@@ -106,6 +106,7 @@ public class LiveConfig {
         } catch (Throwable e) {
 
             Notify.show("111 " + config.getUrl());
+            System.err.println("111" + config.getUrl());
 
             // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
             String backup_url = "https://coolapps.sinaapp.com/backup_config";
