@@ -101,7 +101,6 @@ public class LiveConfig {
         try {
             Notify.show(config.getUrl());
             System.err.println(config.getUrl());
-            System.out.
             parseConfig(Decoder.getJson(config.getUrl()), callback);
         } catch (Throwable e) {
 
