@@ -101,7 +101,14 @@ public class LiveConfig {
         try {
             parseConfig(Decoder.getJson(config.getUrl()), callback);
         } catch (Throwable e) {
-            if (TextUtils.isEmpty(config.getUrl())) App.post(() -> callback.error(""));
+
+            // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
+            String backup_url = "https://coolapps.sinaapp.com/backup_config";
+            if (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url)) {
+                config.setUrl(backup_url);
+                loadConfig(callback);
+            }
+            // if (TextUtils.isEmpty(config.getUrl())) App.post(() -> callback.error(""));
             else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             e.printStackTrace();
         }
@@ -138,6 +145,22 @@ public class LiveConfig {
         for (Depot item : items) configs.add(Config.find(item, 1));
         Config.delete(config.getUrl());
         config = configs.get(0);
+
+        // 使用下发的url替换当前url
+        // 注意用原url中'/'之后的部分替换下发的url中的'{placeholder}'
+        if (config.getUrl().endsWith("{placeholder}")) {
+            Config stored_config = Config.live();
+            if (!TextUtils.isEmpty(stored_config.getUrl())) {
+                String[] url_components = TextUtils.split(stored_config.getUrl(), '/');
+                if (url_components.length > 1) {
+                    String url = config.getUrl().replace("{placeholder}", url_components[url_components.length-1]);
+                    config.setUrl(url);
+                }
+            }
+        }
+        // 将下发的持久存储下来
+        config.update();
+
         loadConfig(callback);
     }
 
