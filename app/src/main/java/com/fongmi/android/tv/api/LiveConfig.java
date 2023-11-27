@@ -29,8 +29,6 @@ public class LiveConfig {
     private Config config;
     private boolean same;
     private Live home;
-    private boolean retry_load;
-    private String config_url_before_retry;
 
     private static class Loader {
         static volatile LiveConfig INSTANCE = new LiveConfig();
@@ -92,40 +90,36 @@ public class LiveConfig {
     }
 
     public void load() {
-        this.retry_load = true;
-        this.config_url_before_retry = "";
         if (isEmpty()) load(new Callback());
     }
 
     public void load(Callback callback) {
-        new Thread(() -> loadConfig(callback)).start();
+        new Thread(() -> loadConfig(callback, true, config.getUrl())).start();
     }
 
-    private void loadConfig(Callback callback) {
+    private void loadConfig(Callback callback, boolean shouldRetry, String entryUrl) {
         try {
             System.err.println(config.getUrl());
-            if (this.retry_load) {
-                this.config_url_before_retry = config.getUrl();
-            }
-            checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback);
+            checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, shouldRetry, entryUrl);
         } catch (Throwable e) {
 
             System.err.println("111" + config.getUrl());
 
             String backup_url = "https://coolapps.sinaapp.com/backup_config";
-            if (this.retry_load &&
+            if (shouldRetry &&
                     (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url))) {
                 // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
-                this.retry_load = false;
-
                 config.setUrl(backup_url);
                 System.err.println("222" + config.getUrl());
-                loadConfig(callback);
+                loadConfig(callback, false, entryUrl);
             }
             else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             e.printStackTrace();
         }
     }
+
+    /*
+    增加内置备用url之后，不再支持下发txt配置的情况，所以以下方法废弃
 
     private void parseConfig(String text, Callback callback) {
         System.err.println("6666" + config.getUrl());
@@ -146,17 +140,18 @@ public class LiveConfig {
         lives.add(live);
         setHome(live);
     }
+     */
 
-    private void checkJson(JsonObject object, Callback callback) {
+    private void checkJson(JsonObject object, Callback callback, boolean shouldRetry, String entryUrl) {
         System.err.println("333" + config.getUrl());
         if (object.has("urls")) {
-            parseDepot(object, callback);
+            parseDepot(object, callback, shouldRetry, entryUrl);
         } else {
             parseConfig(object, callback);
         }
     }
 
-    public void parseDepot(JsonObject object, Callback callback) {
+    public void parseDepot(JsonObject object, Callback callback, boolean shouldRetry, String entryUrl) {
         System.err.println("444" + config.getUrl());
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
         List<Config> configs = new ArrayList<>();
@@ -166,8 +161,8 @@ public class LiveConfig {
 
         // 使用下发的url替换当前url
         // 注意用原url中'/'之后的部分替换下发的url中的'{placeholder}'
-        if (config.getUrl().endsWith("placeholder") && !TextUtils.isEmpty(this.config_url_before_retry)) {
-            String[] url_components = TextUtils.split(this.config_url_before_retry, "/");
+        if (config.getUrl().endsWith("placeholder") && !TextUtils.isEmpty(entryUrl)) {
+            String[] url_components = TextUtils.split(entryUrl, "/");
             if (url_components.length > 1) {
                 String url = config.getUrl().replace("placeholder", url_components[url_components.length-1]);
                 config.setUrl(url);
@@ -178,7 +173,7 @@ public class LiveConfig {
         Config.delete(config.getUrl());
         config.insert();
 
-        loadConfig(callback);
+        loadConfig(callback, shouldRetry, entryUrl);
     }
 
     public void parseConfig(JsonObject object, Callback callback) {
