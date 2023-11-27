@@ -151,7 +151,7 @@ public class LiveConfig {
         if (config.getUrl().endsWith("{placeholder}")) {
             Config stored_config = Config.live();
             if (!TextUtils.isEmpty(stored_config.getUrl())) {
-                String[] url_components = TextUtils.split(stored_config.getUrl(), '/');
+                String[] url_components = TextUtils.split(stored_config.getUrl(), "/");
                 if (url_components.length > 1) {
                     String url = config.getUrl().replace("{placeholder}", url_components[url_components.length-1]);
                     config.setUrl(url);
