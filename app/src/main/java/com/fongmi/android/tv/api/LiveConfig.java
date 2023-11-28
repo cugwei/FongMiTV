@@ -114,7 +114,7 @@ public class LiveConfig {
 //                    "https://raw.gitmirror.com/cugwei/config/main/tconfig.json"};
             boolean shouldRetry = tryTimes < backup_urls.length;
             if (shouldRetry &&
-                    (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url))) {
+                    (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_urls[tryTimes]))) {
                 // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
                 config.setUrl(backup_urls[tryTimes]);
                 System.err.println("222" + config.getUrl());
