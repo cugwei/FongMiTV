@@ -101,7 +101,6 @@ public class LiveConfig {
         try {
             checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, tryTimes, entryUrl);
         } catch (Throwable e) {
-
             String[] backup_urls = {"https://coolapps.sinaapp.com/000tconfig.json",
                     "https://coolapps.sinaapp.com/111tconfig.json",
                     "https://coolapps.sinaapp.com/222tconfig.json"};
@@ -112,11 +111,17 @@ public class LiveConfig {
             boolean shouldRetry = tryTimes < backup_urls.length;
             if (shouldRetry &&
                     (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_urls[tryTimes]))) {
+
                 // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
                 config.setUrl(backup_urls[tryTimes]);
                 loadConfig(callback, tryTimes + 1, entryUrl);
+            } else {
+
+                config = Config.find(entryUrl, 1);
+                config.update();
+
+                App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             }
-            else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             e.printStackTrace();
         }
     }
@@ -152,10 +157,8 @@ public class LiveConfig {
 
     public void parseDepot(JsonObject object, Callback callback, int tryTimes, String entryUrl) {
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
-        List<Config> configs = new ArrayList<>();
-        for (Depot item : items) configs.add(Config.find(item, 1));
-        Config.delete(config.getUrl());
-        config = configs.get(0);
+
+        config = Config.find(items.get(0), 1);//越界之后交给上层catch
 
         // 使用下发的url替换当前url
         // 注意用原url中'/'之后的部分替换下发的url中的'{placeholder}'
@@ -173,9 +176,8 @@ public class LiveConfig {
     public void parseConfig(JsonObject object, Callback callback) {
         if (!object.has("lives")) return;
 
-        // 将下发的 url 持久存储下来
-        Config.delete(config.getUrl());
-        config.insert();
+        config = Config.find(config, 1);
+        config.update();
 
         for (JsonElement element : Json.safeListElement(object, "lives")) add(Live.objectFrom(element).check());
         for (Live live : lives) if (live.getName().equals(config.getHome())) setHome(live);
