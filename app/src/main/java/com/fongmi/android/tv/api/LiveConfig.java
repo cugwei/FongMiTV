@@ -99,11 +99,8 @@ public class LiveConfig {
 
     private void loadConfig(Callback callback, int tryTimes, String entryUrl) {
         try {
-            System.err.println(config.getUrl());
             checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, tryTimes, entryUrl);
         } catch (Throwable e) {
-
-            System.err.println("111" + config.getUrl());
 
             String[] backup_urls = {"https://coolapps.sinaapp.com/000tconfig.json",
                     "https://coolapps.sinaapp.com/111tconfig.json",
@@ -117,7 +114,6 @@ public class LiveConfig {
                     (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_urls[tryTimes]))) {
                 // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
                 config.setUrl(backup_urls[tryTimes]);
-                System.err.println("222" + config.getUrl());
                 loadConfig(callback, tryTimes + 1, entryUrl);
             }
             else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
@@ -129,9 +125,7 @@ public class LiveConfig {
     增加内置备用url之后，不再支持下发txt配置的情况，所以以下方法废弃
 
     private void parseConfig(String text, Callback callback) {
-        System.err.println("6666" + config.getUrl());
         if (Json.invalid(text)) {
-            System.err.println("7777" + config.getUrl());
             parseText(text, callback);
         } else {
             checkJson(JsonParser.parseString(text).getAsJsonObject(), callback);
@@ -139,7 +133,6 @@ public class LiveConfig {
     }
 
     private void parseText(String text, Callback callback) {
-        System.err.println("8888" + text);
         Live live = new Live(config.getUrl());
         LiveParser.text(live, text);
         App.post(callback::success);
@@ -150,7 +143,6 @@ public class LiveConfig {
      */
 
     private void checkJson(JsonObject object, Callback callback, int tryTimes, String entryUrl) {
-        System.err.println("333" + config.getUrl());
         if (object.has("urls")) {
             parseDepot(object, callback, tryTimes, entryUrl);
         } else {
@@ -159,7 +151,6 @@ public class LiveConfig {
     }
 
     public void parseDepot(JsonObject object, Callback callback, int tryTimes, String entryUrl) {
-        System.err.println("444" + config.getUrl());
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
         List<Config> configs = new ArrayList<>();
         for (Depot item : items) configs.add(Config.find(item, 1));
@@ -176,16 +167,16 @@ public class LiveConfig {
             }
         }
 
-        // 将下发的持久存储下来
-        Config.delete(config.getUrl());
-        config.insert();
-
         loadConfig(callback, tryTimes, entryUrl);
     }
 
     public void parseConfig(JsonObject object, Callback callback) {
-        System.err.println("555" + config.getUrl());
         if (!object.has("lives")) return;
+
+        // 将下发的 url 持久存储下来
+        Config.delete(config.getUrl());
+        config.insert();
+
         for (JsonElement element : Json.safeListElement(object, "lives")) add(Live.objectFrom(element).check());
         for (Live live : lives) if (live.getName().equals(config.getHome())) setHome(live);
         if (home == null) setHome(lives.isEmpty() ? new Live() : lives.get(0));
