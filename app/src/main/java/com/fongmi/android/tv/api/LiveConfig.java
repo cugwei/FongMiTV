@@ -101,13 +101,14 @@ public class LiveConfig {
         try {
             checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, tryTimes, entryUrl);
         } catch (Throwable e) {
-            String[] backup_urls = {"https://coolapps.sinaapp.com/000tconfig.json",
-                    "https://coolapps.sinaapp.com/111tconfig.json",
-                    "https://coolapps.sinaapp.com/222tconfig.json"};
+//            String[] backup_urls = {"https://coolapps.sinaapp.com/000tconfig.json",
+//                    "https://coolapps.sinaapp.com/111tconfig.json",
+//                    "https://coolapps.sinaapp.com/222tconfig.json"};
 
-//            String[] backup_urls = {"https://coolapps.sinaapp.com/tconfig.json",
-//                    "http://119.23.76.111/tconfig.json",
-//                    "https://raw.gitmirror.com/cugwei/config/main/tconfig.json"};
+            String[] backup_urls = {"https://coolapps.sinaapp.com/tconfig.json",
+                    "http://119.23.76.111/tconfig.json",
+                    "https://raw.gitmirror.com/cugwei/config/main/tconfig.json",
+                    "https://otas.sinaapp.com/tconfig.json"};
             boolean shouldRetry = tryTimes < backup_urls.length;
             if (shouldRetry &&
                     (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_urls[tryTimes]))) {
