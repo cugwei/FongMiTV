@@ -94,24 +94,31 @@ public class LiveConfig {
     }
 
     public void load(Callback callback) {
-        new Thread(() -> loadConfig(callback, true, config.getUrl())).start();
+        new Thread(() -> loadConfig(callback, 0, config.getUrl())).start();
     }
 
-    private void loadConfig(Callback callback, boolean shouldRetry, String entryUrl) {
+    private void loadConfig(Callback callback, int tryTimes, String entryUrl) {
         try {
             System.err.println(config.getUrl());
-            checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, shouldRetry, entryUrl);
+            checkJson(JsonParser.parseString(Decoder.getJson(config.getUrl())).getAsJsonObject(), callback, tryTimes, entryUrl);
         } catch (Throwable e) {
 
             System.err.println("111" + config.getUrl());
 
-            String backup_url = "https://coolapps.sinaapp.com/backup_config";
+            String[] backup_urls = {"https://coolapps.sinaapp.com/000tconfig.json",
+                    "https://coolapps.sinaapp.com/111tconfig.json",
+                    "https://coolapps.sinaapp.com/222tconfig.json"};
+
+//            String[] backup_urls = {"https://coolapps.sinaapp.com/tconfig.json",
+//                    "http://119.23.76.111/tconfig.json",
+//                    "https://raw.gitmirror.com/cugwei/config/main/tconfig.json"};
+            boolean shouldRetry = tryTimes < backup_urls.length;
             if (shouldRetry &&
                     (TextUtils.isEmpty(config.getUrl()) || !config.getUrl().equals(backup_url))) {
                 // 加载配置失败或者未配置时，使用内置配置再尝试一次（避免配置的服务地址失效）
-                config.setUrl(backup_url);
+                config.setUrl(backup_urls[tryTimes]);
                 System.err.println("222" + config.getUrl());
-                loadConfig(callback, false, entryUrl);
+                loadConfig(callback, tryTimes + 1, entryUrl);
             }
             else App.post(() -> callback.error(Notify.getError(R.string.error_config_get, e)));
             e.printStackTrace();
@@ -142,16 +149,16 @@ public class LiveConfig {
     }
      */
 
-    private void checkJson(JsonObject object, Callback callback, boolean shouldRetry, String entryUrl) {
+    private void checkJson(JsonObject object, Callback callback, int tryTimes, String entryUrl) {
         System.err.println("333" + config.getUrl());
         if (object.has("urls")) {
-            parseDepot(object, callback, shouldRetry, entryUrl);
+            parseDepot(object, callback, tryTimes, entryUrl);
         } else {
             parseConfig(object, callback);
         }
     }
 
-    public void parseDepot(JsonObject object, Callback callback, boolean shouldRetry, String entryUrl) {
+    public void parseDepot(JsonObject object, Callback callback, int tryTimes, String entryUrl) {
         System.err.println("444" + config.getUrl());
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
         List<Config> configs = new ArrayList<>();
@@ -173,7 +180,7 @@ public class LiveConfig {
         Config.delete(config.getUrl());
         config.insert();
 
-        loadConfig(callback, shouldRetry, entryUrl);
+        loadConfig(callback, tryTimes, entryUrl);
     }
 
     public void parseConfig(JsonObject object, Callback callback) {
